@@ -18,19 +18,22 @@ namespace Resteurant_API.Authorization
         }
         protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, MinimumResteurantsCount requirement)
         {
-            var userId = int.Parse(context.User.FindFirst(claim => claim.Type == ClaimTypes.NameIdentifier).Value);
-            var resteurantsCount = _dbContext.Resteurants.Count(r => r.CreatedById == userId);
-            _logger.LogInformation($"User of id: {userId}");
+            if (context.User.Claims.Count() != 0)
+            {
+                var userId = int.Parse(context.User.FindFirst(claim => claim.Type == ClaimTypes.NameIdentifier).Value);
+                var resteurantsCount = _dbContext.Resteurants.Count(r => r.CreatedById == userId);
+                _logger.LogInformation($"User of id: {userId}");
 
-            if (resteurantsCount >= requirement.MinCount)
-            {
-                context.Succeed(requirement);
-                _logger.LogInformation("Authorization Succeeded");
-            }
-            else
-            {
-                context.Fail();
-                _logger.LogInformation("Authorization Failed");
+                if (resteurantsCount >= requirement.MinCount)
+                {
+                    context.Succeed(requirement);
+                    _logger.LogInformation("Authorization Succeeded");
+                }
+                else
+                {
+                    context.Fail();
+                    _logger.LogInformation("Authorization Failed");
+                }
             }
 
             return Task.CompletedTask;

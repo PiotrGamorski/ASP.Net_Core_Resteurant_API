@@ -53,8 +53,6 @@ namespace Resteurant_API.Authentication
                 {
                     identity = new ClaimsIdentity(ParseClaimsFromJwt(authToken), "jwt");
                     _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
-                    //_httpContextAccessor.HttpContext.Response.Cookies.Append("authToken", authToken,
-                    //    new CookieOptions { HttpOnly = true, Secure = true });
                 }
                 catch (Exception e)
                 {
@@ -64,7 +62,6 @@ namespace Resteurant_API.Authentication
 
                 var user = new ClaimsPrincipal(identity);
                 var state = new AuthenticationState(user);
-                //await _httpContextAccessor.HttpContext.SignInAsync(user);
                 NotifyAuthenticationStateChanged(Task.FromResult(state));
             }
 

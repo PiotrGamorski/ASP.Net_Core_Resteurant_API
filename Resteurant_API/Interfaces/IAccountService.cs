@@ -6,6 +6,8 @@ namespace Resteurant_API.Interfaces
     public interface IAccountService
     {
         Task RegisterUser(RegisterUserDto dto);
-        Task<string> Login(LoginUserDto dto);
+        Task<string> Login_UseJSONWebToken(LoginUserDto dto);
+        Task Login_UseCookies(LoginUserDto dto);
+        Task Logout();
     }
 }

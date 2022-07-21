@@ -18,11 +18,14 @@ namespace Resteurant_API.Controllers
     {
         private readonly IResteurantService _service;
         private readonly AuthenticationStateProvider _authenticationStateProvider;
+        private readonly AuthenticationSettings _authenticationSettings;
 
-        public ResteurantController(IResteurantService service, AuthenticationStateProvider authenticationStateProvider)
+        public ResteurantController(IResteurantService service, AuthenticationStateProvider authenticationStateProvider, 
+            AuthenticationSettings authenticationSettings)
         {
             _service = service;
             _authenticationStateProvider = authenticationStateProvider;
+            _authenticationSettings = authenticationSettings;
         }
 
         #region HttpPut Methods
@@ -60,7 +63,7 @@ namespace Resteurant_API.Controllers
         [HttpGet]
         [Authorize(Policy = "HasNationality")]
         [Authorize(Policy ="AtLeast18")]
-        [Authorize(Policy = "CreatedAtLest2Resteurants")]
+        [Authorize(Policy = "CreatedAtLeastOneResteurant")]
         public async Task<ActionResult<IEnumerable<ResteurantDto>>> GetAll()
         {
             var resteurants = await _service.GetAll();
@@ -75,9 +78,12 @@ namespace Resteurant_API.Controllers
             var resteurantDto = await _service.GetById(id);
             if (resteurantDto is null) return NotFound();
 
-            var authState  = await ((CustomAuthStateProvider)_authenticationStateProvider).GetAuthenticationStateAsync();
-            var userId = authState?.User?.FindFirst(claim => claim.Type == ClaimTypes.NameIdentifier)?.Value;
-
+            if (_authenticationSettings.AuthenticationScheme == "Bearer")
+            {
+                var authState = await ((CustomAuthStateProvider)_authenticationStateProvider).GetAuthenticationStateAsync();
+                var userId = authState?.User?.FindFirst(claim => claim.Type == ClaimTypes.NameIdentifier)?.Value;
+            }
+            
             return Ok(resteurantDto);
         }
         #endregion

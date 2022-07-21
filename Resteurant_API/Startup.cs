@@ -1,5 +1,6 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -19,6 +20,7 @@ using Resteurant_API.Middleware;
 using Resteurant_API.Services;
 using Resteurant_API.Services.ContextServices;
 using Resteurant_API.Validators;
+using System;
 using System.Text;
 
 namespace Resteurant_API
@@ -38,29 +40,50 @@ namespace Resteurant_API
             var authenticationSettings = new AuthenticationSettings();
             Configuration.GetSection("Authentication").Bind(authenticationSettings);
             services.AddSingleton(authenticationSettings);
-            services.AddAuthentication(option =>
+
+            if (authenticationSettings.AuthenticationScheme == "Bearer")
             {
-                option.DefaultAuthenticateScheme = "Bearer";
-                option.DefaultScheme = "Bearer";
-                option.DefaultChallengeScheme = "Bearer";
-            }).AddJwtBearer(config =>
-            {
-                config.RequireHttpsMetadata = false;
-                config.SaveToken = true;
-                config.TokenValidationParameters = new TokenValidationParameters()
+                services.AddAuthentication(option =>
                 {
-                    ValidIssuer = authenticationSettings.JwtIssuer,
-                    ValidAudience = authenticationSettings.JwtIssuer,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authenticationSettings.JwtKey)),
-                };
-            });
+                    option.DefaultAuthenticateScheme = "Bearer";
+                    option.DefaultScheme = "Bearer";
+                    option.DefaultChallengeScheme = "Bearer";
+                }).AddJwtBearer(config =>
+                {
+                    config.RequireHttpsMetadata = false;
+                    config.SaveToken = true;
+                    config.TokenValidationParameters = new TokenValidationParameters()
+                    {
+                        ValidIssuer = authenticationSettings.JwtIssuer,
+                        ValidAudience = authenticationSettings.JwtIssuer,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authenticationSettings.JwtKey)),
+                    };
+                });
+            }
+            
+            if(authenticationSettings.AuthenticationScheme == "Cookies")
+            {
+                services.AddAuthentication(options => 
+                {
+                    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                    options.DefaultSignOutScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                }).AddCookie(
+                    CookieAuthenticationDefaults.AuthenticationScheme, options =>
+                    {
+                        options.ExpireTimeSpan = TimeSpan.FromMinutes(20);
+                        options.SlidingExpiration = true;
+                        options.Cookie.HttpOnly = true;
+                    });
+            }
+
             services.AddAuthorization(options =>
             {
                 options.AddPolicy("HasNationality", configurePolicy => 
                     configurePolicy.RequireClaim("Nationality", "Polish"));
                 options.AddPolicy("AtLeast18", configurePolicy =>
                     configurePolicy.AddRequirements(new MinimumAgeRequirement(18)));
-                options.AddPolicy("CreatedAtLest2Resteurants", configurePolicy =>
+                options.AddPolicy("CreatedAtLeastOneResteurant", configurePolicy =>
                     configurePolicy.AddRequirements(new MinimumResteurantsCount(2)));
             });
             services.AddControllers().AddFluentValidation();

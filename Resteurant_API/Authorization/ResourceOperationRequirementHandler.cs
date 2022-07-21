@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Resteurant_API.Entities;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -15,10 +16,13 @@ namespace Resteurant_API.Authorization
                 context.Succeed(requirement);
             }
 
-            var userId = context.User.FindFirst(claim => claim.Type == ClaimTypes.NameIdentifier).Value;
-            if (int.Parse(userId) == resteurant.CreatedById)
+            if (context.User.Claims.Count() != 0)
             {
-                context.Succeed(requirement);
+                var userId = context.User.FindFirst(claim => claim.Type == ClaimTypes.NameIdentifier).Value;
+                if (int.Parse(userId) == resteurant.CreatedById)
+                {
+                    context.Succeed(requirement);
+                }
             }
 
             return Task.CompletedTask;

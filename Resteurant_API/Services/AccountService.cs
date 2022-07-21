@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Components.Authorization;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +16,7 @@ using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -68,7 +71,7 @@ namespace Resteurant_API.Services
         #endregion
 
         #region Login
-        public async Task<string> Login(LoginUserDto dto)
+        public async Task<string> Login_UseJSONWebToken(LoginUserDto dto)
         {
             var user = await Authenticate(dto);
             var token = await GenerateJSONWebToken(user);
@@ -76,15 +79,28 @@ namespace Resteurant_API.Services
             {
                 await ((CustomAuthStateProvider)_authenticationStateProvider).MarkUserAsAuthenticated(token);
                 _httpContextAccessor.HttpContext.Session.SetString("authToken", token);
-                //var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost:5000/api/resteurant/1");
-                //request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                //var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+
                 return await GenerateJSONWebToken(user);
             }
             catch (Exception e)
             {
                 throw new Exception(e.Message);
             }
+        }
+
+        public async Task Login_UseCookies(LoginUserDto dto)
+        {
+            var user = await Authenticate(dto);
+
+            if (user != null)
+            {
+                var claims = UserClaims.CreateClaims(user);
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+
+                await _httpContextAccessor.HttpContext.SignInAsync(claimsPrincipal);
+            }
+            
         }
 
         private async Task<User> Authenticate(LoginUserDto dto)
@@ -116,5 +132,11 @@ namespace Resteurant_API.Services
             return Task.FromResult(jwt);
         }
         #endregion
+
+        public async Task Logout()
+        {
+            await _httpContextAccessor.HttpContext
+                .SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        }
     }
 }
