@@ -1,7 +1,6 @@
 ﻿using Resteurant_API.Dtos;
 using Resteurant_API.Entities;
-using System.Collections.Generic;
-using System.Security.Claims;
+using Resteurant_API.Models;
 using System.Threading.Tasks;
 
 namespace Resteurant_API.Interfaces
@@ -9,7 +8,7 @@ namespace Resteurant_API.Interfaces
     public interface IResteurantService
     {
         Task<ResteurantDto> GetById(int id);
-        Task<IEnumerable<ResteurantDto>> GetAll();
+        Task<PagedResult<ResteurantDto>> GetAll(ResteurantQuery query);
         Task<Resteurant> Create(CreateResteurantDto dto);
         Task Delete(int id);
         Task Update(int id, UpdateResteurantDto dto);

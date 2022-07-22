@@ -8,8 +8,12 @@ using Resteurant_API.Dtos;
 using Resteurant_API.Entities;
 using Resteurant_API.Exceptions;
 using Resteurant_API.Interfaces;
+using Resteurant_API.Models;
 using Resteurant_API.Services.ContextServices;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace Resteurant_API.Services
@@ -33,16 +37,42 @@ namespace Resteurant_API.Services
             _userContextService = userContextService;
         }
         
-        public async Task<IEnumerable<ResteurantDto>> GetAll()
+        public async Task<PagedResult<ResteurantDto>> GetAll(ResteurantQuery query)
         {
             try
             {
-                var resteurants = await _dbContext.Resteurants
+                var baseQuery = _dbContext.Resteurants
                 .Include(r => r.Adress)
                 .Include(r => r.Dishes)
+                .Where(r => query.SearchPhrase == null || (r.Name.ToLower().Contains(query.SearchPhrase.ToLower())
+                    || r.Description.ToLower().Contains(query.SearchPhrase.ToLower())));
+
+                if (!string.IsNullOrEmpty(query.SortBy))
+                {
+                    var columnsSelectors = new Dictionary<string, Expression<Func<Resteurant, object>>>
+                    {
+                        { nameof(Resteurant.Name), r => r.Name },
+                        { nameof(Resteurant.Description), r => r.Description },
+                        { nameof(Resteurant.Category), r => r.Category }
+                    };
+                    var columnSelected = columnsSelectors[query.SortBy];
+
+                    if (query.SortDirection == SortDirection.ASC)
+                        baseQuery = baseQuery.OrderBy(columnSelected);
+                    else
+                        baseQuery = baseQuery.OrderByDescending(columnSelected);
+                }
+
+                var resteurants = await baseQuery
+                .Skip(query.PageSize * (query.PageNumber - 1))
+                .Take(query.PageSize)
                 .ToListAsync();
 
-                return _mapper.Map<List<ResteurantDto>>(resteurants);
+                var resteurantsDtos = _mapper.Map<List<ResteurantDto>>(resteurants);
+                int totalResteurantsCount = await baseQuery.CountAsync();
+                var pagedResult = new PagedResult<ResteurantDto>(resteurantsDtos, totalResteurantsCount, query.PageSize, query.PageNumber);
+
+                return pagedResult;
             }
             catch (DatabaseOperationException)
             {

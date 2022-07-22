@@ -17,6 +17,7 @@ using Resteurant_API.Dtos;
 using Resteurant_API.Entities;
 using Resteurant_API.Interfaces;
 using Resteurant_API.Middleware;
+using Resteurant_API.Models;
 using Resteurant_API.Services;
 using Resteurant_API.Services.ContextServices;
 using Resteurant_API.Validators;
@@ -84,7 +85,7 @@ namespace Resteurant_API
                 options.AddPolicy("AtLeast18", configurePolicy =>
                     configurePolicy.AddRequirements(new MinimumAgeRequirement(18)));
                 options.AddPolicy("CreatedAtLeastOneResteurant", configurePolicy =>
-                    configurePolicy.AddRequirements(new MinimumResteurantsCount(2)));
+                    configurePolicy.AddRequirements(new MinimumResteurantsCount(1)));
             });
             services.AddControllers().AddFluentValidation();
             services.AddDbContext<ResteurantDbContext>();
@@ -101,6 +102,7 @@ namespace Resteurant_API
             services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
             services.AddScoped<IValidator<RegisterUserDto>, RegisterUserDtoValidator>();
             services.AddScoped<IValidator<CreateDishDto>, CreateDishDtoValidator>();
+            services.AddScoped<IValidator<ResteurantQuery>, ResteurantQueryValidator>();
             services.AddScoped<IUserContextService, UserContextService>();
             services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
             services.AddHttpContextAccessor();

@@ -5,6 +5,7 @@ using Resteurant_API.Authentication;
 using Resteurant_API.Dtos;
 using Resteurant_API.Exceptions;
 using Resteurant_API.Interfaces;
+using Resteurant_API.Models;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -64,14 +65,13 @@ namespace Resteurant_API.Controllers
         [Authorize(Policy = "HasNationality")]
         [Authorize(Policy ="AtLeast18")]
         [Authorize(Policy = "CreatedAtLeastOneResteurant")]
-        public async Task<ActionResult<IEnumerable<ResteurantDto>>> GetAll()
+        public async Task<ActionResult<IEnumerable<ResteurantDto>>> GetAll([FromQuery]ResteurantQuery query)
         {
-            var resteurants = await _service.GetAll();
+            var resteurants = await _service.GetAll(query);
             return Ok(resteurants);
         }
 
         [HttpGet("{id}")]
-        //[AllowAnonymous]
         public async Task<ActionResult<ResteurantDto>> Get([FromRoute] int id)
         {
             
