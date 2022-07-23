@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+        function GetAllResteurants() {
+            let xhr = new XMLHttpRequest();
+            xhr.open('GET', 'https://localhost:5000/api/resteurant?searchPhrase&pageSize=10&pageNumber=1&sortBy=Name&sortDirection=ASC', true);
+            xhr.onload = function () {
+                if (xhr.status == 200) {
+                    console.log("success");
+                    let resteurants = JSON.parse(this.response);
+                    resteurants.forEach(resteurant => {
+                        const resteurantCard = document.createElement('div');
+                        resteurantCard.innerHTML = resteurant;
+                        document.getElementById('feed').appendChild(resteurantCard);
+                    });
+                }
+            }
+            xhr.send();
+        }
+
+        function GetResteurants() {
+            fetch('https://localhost:5000/api/resteurant?searchPhrase&pageSize=10&pageNumber=1&sortBy=Name&sortDirection=ASC')
+                .then(res => res.json())
+                .then(data => console.log(data))
+                .catch(err => console.error(err));
+        }
+    </script>
+</head>
+<body>
+    <button onclick=GetResteurants()>Get Resteurants</button>
+    <div id="feed"></div>
+</body>
+</html>

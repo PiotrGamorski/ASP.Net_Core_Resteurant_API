@@ -110,11 +110,21 @@ namespace Resteurant_API
             services.AddSession();
             services.AddHttpClient();
             services.AddSwaggerGen();
+            services.AddCors(options => 
+            {
+                options.AddPolicy("FrontEndClient", builder =>
+                    builder.AllowAnyMethod()
+                           .AllowAnyHeader()
+                           //.AllowAnyOrigin()
+                           .WithOrigins(Configuration["AllowedOrigins"])
+                           ); ;
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ISeeder seeder)
         {
+            app.UseCors("FrontEndClient");
             seeder.Seed();
             if (env.IsDevelopment())
             {
